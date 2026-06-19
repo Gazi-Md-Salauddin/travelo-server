@@ -31,6 +31,7 @@ async function run() {
 
     const database = client.db("travelo_db")
     const ticketCollection = database.collection("tickets")
+    const bookingCollection = database.collection("bookings")
 
 
     app.get('/api/users', async (req, res) => {
@@ -66,6 +67,23 @@ async function run() {
 
   res.send(result);
 });
+
+    app.get('/api/tickets/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const result = await ticketCollection.findOne({
+      _id: new ObjectId(id),
+    });
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to fetch ticket",
+      error: error.message,
+    });
+  }
+});
     
     app.post('/api/tickets', async (req, res) => {
       const ticket = req.body
@@ -95,6 +113,17 @@ async function run() {
 });
 
 
+    //Booking api
+    app.post('/api/bookings', async (req, res) => {
+  const booking = req.body;
+
+  const result = await bookingCollection.insertOne({
+    ...booking,
+    createdAt: new Date(),
+  });
+
+  res.send(result);
+});
 
 
     
