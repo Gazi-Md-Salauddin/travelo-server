@@ -155,6 +155,24 @@ async function run() {
   res.send(result);
 });
 
+    //User related api
+    app.get('/api/bookings/user/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+
+    const result = await bookingCollection
+      .find({ userEmail: email })
+      .toArray();
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to fetch bookings",
+      error: error.message,
+    });
+  }
+});
+
 
     
 
