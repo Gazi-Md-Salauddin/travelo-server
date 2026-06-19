@@ -113,7 +113,37 @@ async function run() {
 });
 
 
-    //Booking api
+    //Booking related apis
+
+    //Get vendor requested bookings
+    app.get('/api/bookings/vendor/:email', async (req, res) => {
+  const email = req.params.email;
+
+  const result = await bookingCollection
+    .find({ vendorEmail: email })
+    .toArray();
+
+  res.send(result);
+});
+
+    //Update booking status
+    app.patch('/api/bookings/:id', async (req, res) => {
+  const id = req.params.id;
+  const { status } = req.body;
+
+  const result = await bookingCollection.updateOne(
+    { _id: new ObjectId(id) },
+    {
+      $set: {
+        status,
+      },
+    }
+  );
+
+  res.send(result);
+});
+
+    //create booking
     app.post('/api/bookings', async (req, res) => {
   const booking = req.body;
 
