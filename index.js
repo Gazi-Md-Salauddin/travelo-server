@@ -49,6 +49,23 @@ async function run() {
   const result = await ticketCollection.find().toArray();
   res.send(result);
 });
+
+
+    app.get('/api/tickets', async (req, res) => {
+  const status = req.query.status;
+
+  const query = {};
+
+  if (status) {
+    query.status = status;
+  }
+
+  const result = await ticketCollection
+    .find(query)
+    .toArray();
+
+  res.send(result);
+});
     
     app.post('/api/tickets', async (req, res) => {
       const ticket = req.body
@@ -60,6 +77,22 @@ async function run() {
       const result = await ticketCollection.insertOne(newTicket)
       res.send(result)
     })
+
+    app.patch('/api/tickets/:id', async (req, res) => {
+  const id = req.params.id;
+  const { status } = req.body;
+
+  const result = await ticketCollection.updateOne(
+    { _id: new ObjectId(id) },
+    {
+      $set: {
+        status,
+      },
+    }
+  );
+
+  res.send(result);
+});
 
 
 
