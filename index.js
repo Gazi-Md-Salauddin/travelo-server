@@ -32,11 +32,12 @@ async function run() {
     const database = client.db("travelo_db")
     const ticketCollection = database.collection("tickets")
     const bookingCollection = database.collection("bookings")
+    const usersCollection = database.collection("user")
 
 
     app.get('/api/users', async (req, res) => {
             
-            const cursor = usersCollection.find().skip(6);
+            const cursor = usersCollection.find().skip(1);
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -53,7 +54,7 @@ async function run() {
 
 
     app.get('/api/tickets', async (req, res) => {
-  const status = req.query.status;
+   status = req.query.status;
 
   const query = {};
 
@@ -64,7 +65,7 @@ async function run() {
   const result = await ticketCollection
     .find(query)
     .toArray();
-
+  
   res.send(result);
 });
 
@@ -174,6 +175,29 @@ async function run() {
 });
 
 
+    //manage user in admin dashboard
+    app.get("/api/users", async (req, res) => {
+  const result = await usersCollection.find().toArray();
+  res.send(result);
+});
+
+    app.patch("/api/users/:id/role", async (req, res) => {
+  const { role } = req.body;
+
+  const result = await usersCollection.updateOne(
+    {
+      _id: new ObjectId(req.params.id),
+    },
+    {
+      $set: {
+        role,
+        isFraud: true,
+      }
+    }
+  );
+
+  res.send(result);
+});
     
 
     
