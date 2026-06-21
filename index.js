@@ -32,8 +32,9 @@ async function run() {
     const database = client.db("travelo_db")
     const ticketCollection = database.collection("tickets")
     const bookingCollection = database.collection("bookings")
-    const usersCollection = database.collection("user")
 
+    const userDatabase = client.db("travelo"); 
+    const usersCollection = userDatabase.collection("user");
 
     app.get('/api/users', async (req, res) => {
             
@@ -43,8 +44,7 @@ async function run() {
         })
 
 
-
-
+    
 
 
     app.get('/api/tickets', async (req, res) => {
@@ -113,7 +113,33 @@ async function run() {
   res.send(result);
 });
 
+    //update ticket
+    app.put("/api/tickets/:id", async (req, res) => {
+  const id = req.params.id;
+  const updatedTicket = req.body;
 
+  const result = await ticketCollection.updateOne(
+    { _id: new ObjectId(id) },
+    {
+      $set: updatedTicket,
+    }
+  );
+
+  res.send(result);
+});
+
+
+    //delete ticket
+    app.delete("/api/tickets/:id", async (req, res) => {
+  const id = req.params.id;
+
+  const result = await ticketCollection.deleteOne({
+    _id: new ObjectId(id),
+  });
+
+  res.send(result);
+});
+    
     //Booking related apis
 
     //Get vendor requested bookings
@@ -144,6 +170,7 @@ async function run() {
   res.send(result);
 });
 
+    
     //create booking
     app.post('/api/bookings', async (req, res) => {
   const booking = req.body;
@@ -200,6 +227,38 @@ async function run() {
 });
     
 
+//For profile update
+
+    app.patch("/api/users/:id", async (req, res) => {
+  const id = req.params.id;
+      console.log("Backend received ID:", id);
+  const { name, image } = req.body;
+
+  try {
+    const query = {
+      $or: [
+        { id: id }, // যদি আইডিটি সাধারণ স্ট্রিং হিসেবে 'id' ফিল্ডে থাকে
+        { _id: id }, // যদি '_id' ফিল্ডে সরাসরি স্ট্রিং থাকে
+        { _id: new ObjectId(id) } // যদি '_id' ফিল্ডে ObjectId হিসেবে থাকে
+      ]
+    };
+    const result = await usersCollection.updateOne(
+      query,
+      {
+        $set: {
+          name,
+          image,
+        },
+      }
+    );
+
+    res.send(result);
+  } catch (error) {
+    
+    res.status(400).send({ error: "Invalid ID format" });
+  }
+});
+    
     
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
