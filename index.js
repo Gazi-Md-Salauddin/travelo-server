@@ -187,11 +187,11 @@ async function run() {
     app.get('/api/bookings/user/:email', async (req, res) => {
   try {
     const email = req.params.email;
-
+    console.log("Backend received Email:", email)
     const result = await bookingCollection
       .find({ userEmail: email })
       .toArray();
-
+      console.log("Database from:", result)
     res.send(result);
   } catch (error) {
     res.status(500).send({
@@ -237,9 +237,9 @@ async function run() {
   try {
     const query = {
       $or: [
-        { id: id }, // যদি আইডিটি সাধারণ স্ট্রিং হিসেবে 'id' ফিল্ডে থাকে
-        { _id: id }, // যদি '_id' ফিল্ডে সরাসরি স্ট্রিং থাকে
-        { _id: new ObjectId(id) } // যদি '_id' ফিল্ডে ObjectId হিসেবে থাকে
+        { id: id },
+        { _id: id },
+        { _id: new ObjectId(id) }
       ]
     };
     const result = await usersCollection.updateOne(
