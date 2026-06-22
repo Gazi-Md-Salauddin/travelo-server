@@ -54,19 +54,39 @@ async function run() {
 
 
     app.get('/api/tickets', async (req, res) => {
-   status = req.query.status;
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
 
-  const query = {};
+    const query = {};
 
-  if (status) {
-    query.status = status;
+    if (status) {
+      query.status = status;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const tickets = await ticketCollection
+      .find(query)
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+
+    const total = await ticketCollection.countDocuments(query);
+
+    res.send({
+      tickets,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalTickets: total,
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to fetch tickets",
+      error: error.message,
+    });
   }
-
-  const result = await ticketCollection
-    .find(query)
-    .toArray();
-  
-  res.send(result);
 });
 
     app.get('/api/tickets/:id', async (req, res) => {
@@ -284,6 +304,7 @@ async function run() {
         $set: {
           status: "paid",
           paymentDate: new Date(),
+          transactionId: transactionId
         },
       }
     );
@@ -311,6 +332,31 @@ async function run() {
     });
   }
 });
+
+
+    
+app.get('/api/transactions/user/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    
+    
+    const result = await bookingCollection
+      .find({ 
+        userEmail: email, 
+        status: "paid" 
+      })
+      .sort({ paymentDate: -1 }) 
+      .toArray();
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to fetch transactions",
+      error: error.message,
+    });
+  }
+});
+
     
     
     // Send a ping to confirm a successful connection
