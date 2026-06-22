@@ -258,6 +258,59 @@ async function run() {
     res.status(400).send({ error: "Invalid ID format" });
   }
 });
+
+    //payment related api
+    app.patch("/api/bookings/:id/pay", async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+
+    
+    const booking = await bookingCollection.findOne({
+      _id: new ObjectId(bookingId),
+    });
+
+    if (!booking) {
+      return res.status(404).send({
+        message: "Booking not found",
+      });
+    }
+
+    // status paid
+    await bookingCollection.updateOne(
+      {
+        _id: new ObjectId(bookingId),
+      },
+      {
+        $set: {
+          status: "paid",
+          paymentDate: new Date(),
+        },
+      }
+    );
+
+    // reduce ticket quantity
+    await ticketCollection.updateOne(
+      {
+        _id: new ObjectId(booking.ticketId),
+      },
+      {
+        $inc: {
+          quantity: -booking.bookingQuantity,
+        },
+      }
+    );
+
+    res.send({
+      success: true,
+      message: "Payment completed and ticket quantity updated",
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
     
     
     // Send a ping to confirm a successful connection
