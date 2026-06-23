@@ -36,6 +36,72 @@ async function run() {
     const userDatabase = client.db("travelo"); 
     const usersCollection = userDatabase.collection("user");
 
+
+
+    //verification related
+    const verifyToken = async (req, res, next) => {
+
+    const authHeader = req.headers?.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+
+    const token = authHeader.split(' ')[1]
+
+    if (!token) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+
+    const query = { token: token }
+    const session = await sessionCollection.findOne(query);
+
+    if (!session) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+
+    const userId = session.userId;
+
+
+    const userQuery = {
+        _id: userId
+    }
+
+    const user = await usersCollection.findOne(userQuery);
+    if (!user) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    // set data in the req object
+    req.user = user;
+    next();
+}
+
+
+    // must be used after verifyToken middleware
+const verifyUser = async (req, res, next) => {
+    if (req.user?.role !== 'user') {
+        return res.status(403).send({ message: 'forbidden access' })
+    }
+    next();
+}
+
+// must be used after verifyToken middleware
+const verifyVendor = async (req, res, next) => {
+    if (req.user?.role !== 'vendor') {
+        return res.status(403).send({ message: 'forbidden access' })
+    }
+    next();
+}
+
+// must be used after verifyToken middleware
+const verifyAdmin = async (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send({ message: 'forbidden access' })
+    }
+    next();
+}
+
+
+    
     app.get('/api/users', async (req, res) => {
             
             const cursor = usersCollection.find().skip(1);
@@ -238,7 +304,7 @@ async function run() {
     {
       $set: {
         role,
-        isFraud: true,
+        isFraud: false,
       }
     }
   );
@@ -251,7 +317,7 @@ async function run() {
 
     app.patch("/api/users/:id", async (req, res) => {
   const id = req.params.id;
-      console.log("Backend received ID:", id);
+      
   const { name, image } = req.body;
 
   try {
