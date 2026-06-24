@@ -53,7 +53,7 @@ async function run() {
     }
 
     const query = { token: token }
-    const session = await sessionCollection.findOne(query);
+    const session = await usersCollection.findOne(query);
 
     if (!session) {
         return res.status(401).send({ message: 'unauthorized access' })
@@ -94,7 +94,7 @@ const verifyVendor = async (req, res, next) => {
 
 // must be used after verifyToken middleware
 const verifyAdmin = async (req, res, next) => {
-    if (req.user.role !== 'admin') {
+    if (req.user?.role !== 'admin') {
         return res.status(403).send({ message: 'forbidden access' })
     }
     next();
@@ -155,6 +155,8 @@ const verifyAdmin = async (req, res, next) => {
   }
 });
 
+
+    //all ticket details 
     app.get('/api/tickets/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -172,7 +174,7 @@ const verifyAdmin = async (req, res, next) => {
   }
 });
     
-    app.post('/api/tickets', async (req, res) => {
+    app.post('/api/tickets', verifyToken, verifyVendor, async (req, res) => {
       const ticket = req.body
       const newTicket = {
        ...ticket, 
@@ -200,7 +202,7 @@ const verifyAdmin = async (req, res, next) => {
 });
 
     //update ticket
-    app.put("/api/tickets/:id", async (req, res) => {
+    app.put("/api/tickets/:id", verifyToken, verifyVendor, async (req, res) => {
   const id = req.params.id;
   const updatedTicket = req.body;
 
@@ -216,7 +218,7 @@ const verifyAdmin = async (req, res, next) => {
 
 
     //delete ticket
-    app.delete("/api/tickets/:id", async (req, res) => {
+    app.delete("/api/tickets/:id", verifyToken, verifyVendor, async (req, res) => {
   const id = req.params.id;
 
   const result = await ticketCollection.deleteOne({
@@ -229,7 +231,7 @@ const verifyAdmin = async (req, res, next) => {
     //Booking related apis
 
     //Get vendor requested bookings
-    app.get('/api/bookings/vendor/:email', async (req, res) => {
+    app.get('/api/bookings/vendor/:email', verifyToken, verifyVendor, async (req, res) => {
   const email = req.params.email;
 
   const result = await bookingCollection
@@ -240,7 +242,7 @@ const verifyAdmin = async (req, res, next) => {
 });
 
     //Update booking status
-    app.patch('/api/bookings/:id', async (req, res) => {
+    app.patch('/api/bookings/:id', verifyToken, verifyVendor, async (req, res) => {
   const id = req.params.id;
   const { status } = req.body;
 
@@ -273,11 +275,11 @@ const verifyAdmin = async (req, res, next) => {
     app.get('/api/bookings/user/:email', async (req, res) => {
   try {
     const email = req.params.email;
-    console.log("Backend received Email:", email)
+    
     const result = await bookingCollection
       .find({ userEmail: email })
       .toArray();
-      console.log("Database from:", result)
+    
     res.send(result);
   } catch (error) {
     res.status(500).send({
@@ -294,7 +296,7 @@ const verifyAdmin = async (req, res, next) => {
   res.send(result);
 });
 
-    app.patch("/api/users/:id/role", async (req, res) => {
+    app.patch("/api/users/:id/role", verifyToken, verifyAdmin, async (req, res) => {
   const { role } = req.body;
 
   const result = await usersCollection.updateOne(
@@ -350,7 +352,7 @@ const verifyAdmin = async (req, res, next) => {
   try {
     const bookingId = req.params.id;
 
-    
+    const transactionId = req.body
     const booking = await bookingCollection.findOne({
       _id: new ObjectId(bookingId),
     });
