@@ -35,43 +35,46 @@ async function run() {
 
     const userDatabase = client.db("travelo"); 
     const usersCollection = userDatabase.collection("user");
-
+    const sessionCollection = userDatabase.collection("session");
 
 
     //verification related
     const verifyToken = async (req, res, next) => {
-
     const authHeader = req.headers?.authorization;
+
+    console.log("AUTH HEADER:", authHeader);
+
     if (!authHeader) {
+        console.log("STEP 1 FAILED");
         return res.status(401).send({ message: 'unauthorized access' })
     }
 
-    const token = authHeader.split(' ')[1]
+    const token = authHeader.split(' ')[1];
 
-    if (!token) {
-        return res.status(401).send({ message: 'unauthorized access' })
-    }
+    console.log("TOKEN:", token);
 
-    const query = { token: token }
-    const session = await usersCollection.findOne(query);
+    const session = await sessionCollection.findOne({
+       token: token
+    });
+
+    console.log("SESSION:", session);
 
     if (!session) {
+        console.log("STEP 2 FAILED");
         return res.status(401).send({ message: 'unauthorized access' })
     }
+    
+      const user = await usersCollection.findOne({
+    _id: session.userId,
+  });
 
-    const userId = session.userId;
+  if (!user) {
+    return res.status(401).send({
+      message: "unauthorized access",
+    });
+  }
 
-
-    const userQuery = {
-        _id: userId
-    }
-
-    const user = await usersCollection.findOne(userQuery);
-    if (!user) {
-        return res.status(401).send({ message: 'unauthorized access' })
-    }
-    // set data in the req object
-    req.user = user;
+      req.user = user
     next();
 }
 
@@ -204,7 +207,7 @@ const verifyAdmin = async (req, res, next) => {
     //update ticket
     app.put("/api/tickets/:id", verifyToken, verifyVendor, async (req, res) => {
   const id = req.params.id;
-  const updatedTicket = req.body;
+  const { _id, ...updatedTicket} = req.body;
 
   const result = await ticketCollection.updateOne(
     { _id: new ObjectId(id) },
@@ -306,7 +309,7 @@ const verifyAdmin = async (req, res, next) => {
     {
       $set: {
         role,
-        isFraud: false,
+        isFraud: true,
       }
     }
   );
