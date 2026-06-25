@@ -231,6 +231,56 @@ const verifyAdmin = async (req, res, next) => {
 
   res.send(result);
 });
+
+    //get advertise ticket 
+    app.get("/api/admin/advertise-tickets", verifyToken, verifyAdmin, async (req, res) => {
+  const result = await ticketCollection
+    .find({ status: "approved" })
+    .toArray();
+
+  res.send(result);
+});
+
+    //toggle advertis and unadvertise ticket
+     app.patch(
+  "/api/admin/advertise-tickets/:id",
+  verifyToken,
+  verifyAdmin,
+  async (req, res) => {
+    const { advertise } = req.body;
+
+    if (advertise) {
+      const count = await ticketCollection.countDocuments({
+        isAdvertised: true,
+      });
+
+      if (count >= 6) {
+        return res.status(400).send({
+          message:
+            "Maximum 6 tickets can be advertised",
+        });
+      }
+    }
+
+    const result =
+      await ticketCollection.updateOne(
+        {
+          _id: new ObjectId(
+            req.params.id
+          ),
+        },
+        {
+          $set: {
+            isAdvertised: advertise,
+          },
+        }
+      );
+
+    res.send(result);
+  }
+);
+
+
     
     //Booking related apis
 
