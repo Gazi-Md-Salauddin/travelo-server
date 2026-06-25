@@ -176,7 +176,8 @@ const verifyAdmin = async (req, res, next) => {
     });
   }
 });
-    
+
+    // for add ticket
     app.post('/api/tickets', verifyToken, verifyVendor, async (req, res) => {
       const ticket = req.body
       const newTicket = {
@@ -264,8 +265,9 @@ const verifyAdmin = async (req, res, next) => {
     
     //create booking
     app.post('/api/bookings', async (req, res) => {
+  console.log("Create Booking", req.body)
+      
   const booking = req.body;
-
   const result = await bookingCollection.insertOne({
     ...booking,
     createdAt: new Date(),
@@ -273,6 +275,58 @@ const verifyAdmin = async (req, res, next) => {
 
   res.send(result);
 });
+
+
+ //vendor revenue overview api
+    app.get(
+  "/api/revenue-overview/:email",
+  verifyToken,
+  verifyVendor,
+  async (req, res) => {
+    try {
+      const email = req.params.email;
+
+      // Vendor added tickets
+      const ticketsAdded =
+        await ticketCollection.countDocuments({
+          vendorEmail: email,
+        });
+
+      // Paid bookings of this vendor
+      const paidBookings = await bookingCollection
+        .find({
+          vendorEmail: email,
+          status: "paid",
+        })
+        .toArray();
+
+      // Total sold tickets
+      const ticketsSold = paidBookings.reduce(
+        (sum, booking) =>
+          sum + Number(booking.bookingQuantity || 0),
+        0
+      );
+
+      // Total revenue
+      const totalRevenue = paidBookings.reduce(
+        (sum, booking) =>
+          sum + Number(booking.totalPrice || 0),
+        0
+      );
+
+      res.send({
+        ticketsAdded,
+        ticketsSold,
+        totalRevenue,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({
+        message: "Internal Server Error",
+      });
+    }
+  }
+);
 
     //User related api
     app.get('/api/bookings/user/:email', async (req, res) => {
