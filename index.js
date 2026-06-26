@@ -158,6 +158,25 @@ const verifyAdmin = async (req, res, next) => {
   }
 });
 
+    // Get advertised tickets (max 6)
+app.get("/api/advertisements", async (req, res) => {
+  try {
+    const result = await ticketCollection
+      .find({
+        status: "approved",
+        isAdvertised: true,
+      })
+      .limit(6)
+      .toArray();
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to fetch advertisements",
+    });
+  }
+});
+
 
     //all ticket details 
     app.get('/api/tickets/:id', verifyToken, verifyUser, async (req, res) => {
