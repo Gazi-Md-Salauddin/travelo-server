@@ -160,7 +160,7 @@ const verifyAdmin = async (req, res, next) => {
 
 
     //all ticket details 
-    app.get('/api/tickets/:id', async (req, res) => {
+    app.get('/api/tickets/:id', verifyToken, verifyUser, async (req, res) => {
   try {
     const id = req.params.id;
 
@@ -424,7 +424,7 @@ const verifyAdmin = async (req, res, next) => {
 
 //For profile update
 
-    app.patch("/api/users/:id", async (req, res) => {
+    app.patch("/api/users/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
       
   const { name, image } = req.body;
@@ -535,7 +535,7 @@ app.get('/api/transactions/user/:email', async (req, res) => {
     
     
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    //await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
