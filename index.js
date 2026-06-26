@@ -116,10 +116,10 @@ const verifyAdmin = async (req, res, next) => {
     
 
 
-    app.get('/api/tickets', async (req, res) => {
-  const result = await ticketCollection.find().toArray();
-  res.send(result);
-});
+//     app.get('/api/tickets', async (req, res) => {
+//   const result = await ticketCollection.find().toArray();
+//   res.send(result);
+// });
 
 
     app.get("/api/tickets", async (req, res) => {
