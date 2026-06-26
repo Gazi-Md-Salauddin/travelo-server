@@ -122,11 +122,18 @@ const verifyAdmin = async (req, res, next) => {
 });
 
 
-    app.get('/api/tickets', async (req, res) => {
+    app.get("/api/tickets", async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const status = req.query.status;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 6;
+
+    const {
+      status,
+      from,
+      to,
+      transportType,
+      sort,
+    } = req.query;
 
     const query = {};
 
@@ -134,21 +141,48 @@ const verifyAdmin = async (req, res, next) => {
       query.status = status;
     }
 
-    const skip = (page - 1) * limit;
+    if (from) {
+      query.from = {
+        $regex: from,
+        $options: "i",
+      };
+    }
+
+    if (to) {
+      query.to = {
+        $regex: to,
+        $options: "i",
+      };
+    }
+
+    if (transportType) {
+      query.transportType = transportType;
+    }
+
+    let sortOption = {};
+
+    if (sort === "low") {
+      sortOption.price = 1;
+    }
+
+    if (sort === "high") {
+      sortOption.price = -1;
+    }
 
     const tickets = await ticketCollection
       .find(query)
-      .skip(skip)
+      .sort(sortOption)
+      .skip((page - 1) * limit)
       .limit(limit)
       .toArray();
 
-    const total = await ticketCollection.countDocuments(query);
+    const totalTickets = await ticketCollection.countDocuments(query);
 
     res.send({
       tickets,
       currentPage: page,
-      totalPages: Math.ceil(total / limit),
-      totalTickets: total,
+      totalPages: Math.ceil(totalTickets / limit),
+      totalTickets,
     });
   } catch (error) {
     res.status(500).send({
