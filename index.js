@@ -1,4 +1,4 @@
-Const express = require('express');
+const express = require('express');
 const app = express()
 const port = 5000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
