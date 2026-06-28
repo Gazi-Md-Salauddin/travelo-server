@@ -105,12 +105,12 @@ const verifyAdmin = async (req, res, next) => {
 
 
     
-    app.get('/api/users', async (req, res) => {
+    // app.get('/api/users', async (req, res) => {
             
-            const cursor = usersCollection.find().skip(1);
-            const result = await cursor.toArray();
-            res.send(result);
-        })
+    //         const cursor = usersCollection.find().skip(1);
+    //         const result = await cursor.toArray();
+    //         res.send(result);
+    //     })
 
 
     
@@ -596,7 +596,6 @@ app.get('/api/transactions/user/:email', async (req, res) => {
   }
 }
 run().catch(console.dir);
-
 
 
 
