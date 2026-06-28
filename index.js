@@ -5,7 +5,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const dotenv = require("dotenv");
 const cors = require("cors");
 require('dotenv').config()
-app.use(cors())
+app.use(cors({}))
 app.use(express.json())
 
 app.get('/', (req, res) => {
@@ -31,7 +31,7 @@ let usersCollection;
 let sessionCollection;
 
 
-async function connectDB() {
+async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     if (ticketCollection && bookingCollection && usersCollection && sessionCollection) {
@@ -47,13 +47,7 @@ async function connectDB() {
     usersCollection = userDatabase.collection("user");
     sessionCollection = userDatabase.collection("session");
 
-  } catch (error) {
-    res.status(500).send({
-      message: "Failed to fetch transactions",
-      error: error.message,
-    });
-  }
-}
+  
 
 app.use(async (req, res, next) => {
   await connectDB();
@@ -603,17 +597,25 @@ app.get('/api/transactions/user/:email', async (req, res) => {
   } 
 });
 
+    } catch (error) {
+    res.status(500).send({
+      message: "Failed to fetch transactions",
+      error: error.message,
+    });
+  
+
+
     
     
     // Send a ping to confirm a successful connection
     //await client.db("admin").command({ ping: 1 });
-    //console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  //} finally {
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } finally {
     // Ensures that the client will close when you finish/error
     //await client.close();
- // }
-//}
-//run().catch(console.dir);
+  }
+}
+run().catch(console.dir);
 
 
 
