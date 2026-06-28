@@ -1,11 +1,11 @@
-const express = require('express');
+Const express = require('express');
 const app = express()
 const port = 5000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const dotenv = require("dotenv");
 const cors = require("cors");
 require('dotenv').config()
-app.use(cors({}))
+app.use(cors())
 app.use(express.json())
 
 app.get('/', (req, res) => {
@@ -20,41 +20,24 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  },
-  maxPoolSize: 10,
-  minPoolSize: 1,
+  }
 });
-
-let ticketCollection;
-let bookingCollection;
-let usersCollection;
-let sessionCollection;
 
 
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    if (ticketCollection && bookingCollection && usersCollection && sessionCollection) {
-      return;
-    }
     await client.connect();
 
     const database = client.db("travelo_db")
-    ticketCollection = database.collection("tickets")
-    bookingCollection = database.collection("bookings")
+    const ticketCollection = database.collection("tickets")
+    const bookingCollection = database.collection("bookings")
 
     const userDatabase = client.db("travelo"); 
-    usersCollection = userDatabase.collection("user");
-    sessionCollection = userDatabase.collection("session");
+    const usersCollection = userDatabase.collection("user");
+    const sessionCollection = userDatabase.collection("session");
 
-  
 
-app.use(async (req, res, next) => {
-  await connectDB();
-  next();
-});
-
-  
     //verification related
     const verifyToken = async (req, res, next) => {
     const authHeader = req.headers?.authorization;
@@ -594,16 +577,13 @@ app.get('/api/transactions/user/:email', async (req, res) => {
       .toArray();
 
     res.send(result);
-  } 
-});
-
-    } catch (error) {
+  } catch (error) {
     res.status(500).send({
       message: "Failed to fetch transactions",
       error: error.message,
     });
-  
-
+  }
+});
 
     
     
