@@ -25,7 +25,9 @@ const client = new MongoClient(uri, {
 
 
 async function run() {
+  app.use(async (req, res, next) => {
   try {
+    if (!ticketCollection || !bookingCollection || !usersCollection || !sessionCollection) {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
@@ -37,6 +39,14 @@ async function run() {
     const usersCollection = userDatabase.collection("user");
     const sessionCollection = userDatabase.collection("session");
 
+    console.log("MongoDB Re-connected successfully!");
+    }
+    next();
+  } catch (error) {
+    console.error("Database middleware connection error:", error);
+    res.status(500).send({ message: "Database connection failed", error: error.message });
+  }
+});
 
     //verification related
     const verifyToken = async (req, res, next) => {
@@ -594,10 +604,20 @@ app.get('/api/transactions/user/:email', async (req, res) => {
     // Ensures that the client will close when you finish/error
     //await client.close();
   }
-}
 run().catch(console.dir);
 
 
+
+app.use((req, res, next) => {
+  res.status(404).send({
+    message: `Route ${req.originalUrl} not found on this server.`
+  });
+});
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send({ message: "Something went wrong on the server!", error: err.message });
+});
 
 
 
