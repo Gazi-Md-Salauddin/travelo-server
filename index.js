@@ -39,7 +39,7 @@ async function run() {
         ticketCollection = database.collection("tickets");
         bookingCollection = database.collection("bookings");
 
-        const userDatabase = client.db("travelo"); 
+        const userDatabase = client.db("travelo");
         usersCollection = userDatabase.collection("user");
         sessionCollection = userDatabase.collection("session");
 
@@ -58,8 +58,8 @@ async function run() {
     console.log("AUTH HEADER:", authHeader);
 
     if (!authHeader) {
-        console.log("STEP 1 FAILED");
-        return res.status(401).send({ message: 'unauthorized access' });
+      console.log("STEP 1 FAILED");
+      return res.status(401).send({ message: 'unauthorized access' });
     }
 
     const token = authHeader.split(' ')[1];
@@ -69,10 +69,9 @@ async function run() {
     console.log("SESSION:", session);
 
     if (!session) {
-        console.log("STEP 2 FAILED");
-        return res.status(401).send({ message: 'unauthorized access' });
+      console.log("STEP 2 FAILED");
+      return res.status(401).send({ message: 'unauthorized access' });
     }
-    
     const user = await usersCollection.findOne({ _id: session.userId });
 
     if (!user) {
@@ -84,28 +83,27 @@ async function run() {
   };
 
   const verifyUser = async (req, res, next) => {
-      if (req.user?.role !== 'user') {
-          return res.status(403).send({ message: 'forbidden access' });
-      }
-      next();
+    if (req.user?.role !== 'user') {
+      return res.status(403).send({ message: 'forbidden access' });
+    }
+    next();
   };
 
   const verifyVendor = async (req, res, next) => {
-      if (req.user?.role !== 'vendor') {
-          return res.status(403).send({ message: 'forbidden access' });
-      }
-      next();
+    if (req.user?.role !== 'vendor') {
+      return res.status(403).send({ message: 'forbidden access' });
+    }
+    next();
   };
 
   const verifyAdmin = async (req, res, next) => {
-      if (req.user?.role !== 'admin') {
-          return res.status(403).send({ message: 'forbidden access' });
-      }
-      next();
+    if (req.user?.role !== 'admin') {
+      return res.status(403).send({ message: 'forbidden access' });
+    }
+    next();
   };
 
   // ==================== API ROUTES ====================
-  
   app.get("/api/tickets", async (req, res) => {
     try {
       const page = Number(req.query.page) || 1;
