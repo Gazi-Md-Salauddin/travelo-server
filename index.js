@@ -55,7 +55,7 @@ async function run() {
   // Verification Related Middleware
   const verifyToken = async (req, res, next) => {
     const authHeader = req.headers?.authorization;
-    console.log("AUTH HEADER:", authHeader);
+    console.log("AUTH HEADER:", req.headers?.authorization);
 
     if (!authHeader) {
       console.log("STEP 1 FAILED");
@@ -80,6 +80,7 @@ async function run() {
 
     req.user = user;
     next();
+
   };
 
   const verifyUser = async (req, res, next) => {
@@ -90,9 +91,18 @@ async function run() {
   };
 
   const verifyVendor = async (req, res, next) => {
-    if (req.user?.role !== 'vendor') {
-      return res.status(403).send({ message: 'forbidden access' });
+    if (req.user?.role !== "vendor") {
+      return res.status(403).send({
+        message: "Vendor access required",
+      });
     }
+
+    if (req.user?.isFraud === true) {
+      return res.status(403).send({
+        message: "Your vendor account has been restricted",
+      });
+    }
+
     next();
   };
 
@@ -153,7 +163,7 @@ async function run() {
     }
   });
 
-  app.get('/api/tickets/:id', verifyToken, verifyUser, async (req, res) => {
+  app.get('/api/tickets/:id', async (req, res) => {
     try {
       const id = req.params.id;
       const result = await ticketCollection.findOne({ _id: new ObjectId(id) });
@@ -194,6 +204,26 @@ async function run() {
     const result = await ticketCollection.find({ status: "approved" }).toArray();
     res.send(result);
   });
+
+  app.get(
+    "/api/admin/bookings",
+    verifyToken,
+    verifyAdmin,
+    async (req, res) => {
+      try {
+        const bookings = await bookingCollection
+          .find()
+          .sort({ createdAt: -1 })
+          .toArray();
+
+        res.send(bookings);
+      } catch (error) {
+        res.status(500).send({
+          message: "Failed to fetch bookings",
+        });
+      }
+    }
+  );
 
   app.patch("/api/admin/advertise-tickets/:id", verifyToken, verifyAdmin, async (req, res) => {
     const { advertise } = req.body;
@@ -257,9 +287,64 @@ async function run() {
   });
 
   app.patch("/api/users/:id/role", verifyToken, verifyAdmin, async (req, res) => {
-    const { role } = req.body;
-    const result = await usersCollection.updateOne({ _id: new ObjectId(req.params.id) }, { $set: { role, isFraud: true } });
-    res.send(result);
+    try {
+      const { role } = req.body;
+
+      const result = await usersCollection.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        {
+          $set: { role }
+        }
+      );
+
+      res.send(result);
+    } catch (error) {
+      res.status(500).send({
+        message: "Failed to update user role",
+        error: error.message,
+      });
+    }
+  });
+
+  app.patch("/api/users/:id/fraud", verifyToken, verifyAdmin, async (req, res) => {
+    try {
+      const { isFraud } = req.body || {};
+
+      if (typeof isFraud !== "boolean") {
+        return res.status(400).send({
+          message: "isFraud must be a boolean",
+        });
+      }
+
+      const result = await usersCollection.updateOne(
+        {
+          _id: new ObjectId(req.params.id),
+          role: "vendor",
+        },
+        {
+          $set: { isFraud },
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).send({
+          message: "Vendor not found",
+        });
+      }
+
+      res.send({
+        success: true,
+        message: isFraud
+          ? "Vendor marked as fraud"
+          : "Fraud status removed",
+        result,
+      });
+    } catch (error) {
+      res.status(500).send({
+        message: "Failed to update fraud status",
+        error: error.message,
+      });
+    }
   });
 
   app.patch("/api/users/:id", verifyToken, async (req, res) => {
@@ -274,7 +359,7 @@ async function run() {
     }
   });
 
-  app.patch("/api/bookings/:id/pay", async (req, res) => {
+  app.patch("/api/bookings/:id/pay", verifyToken, async (req, res) => {
     try {
       const bookingId = req.params.id;
       const transactionId = req.body;
@@ -282,8 +367,16 @@ async function run() {
 
       if (!booking) return res.status(404).send({ message: "Booking not found" });
 
-      await bookingCollection.updateOne({ _id: new ObjectId(bookingId) }, { $set: { status: "paid", paymentDate: new Date(), transactionId: transactionId } });
-      await ticketCollection.updateOne({ _id: new ObjectId(booking.ticketId) }, { $inc: { quantity: -booking.bookingQuantity } });
+      await bookingCollection.updateOne(
+        { _id: new ObjectId(bookingId) },
+        {
+          $set: { status: "paid", paymentDate: new Date(), transactionId: transactionId }
+        });
+      await ticketCollection.updateOne(
+        { _id: new ObjectId(booking.ticketId) },
+        {
+          $inc: { quantity: -booking.bookingQuantity }
+        });
 
       res.send({ success: true, message: "Payment completed and ticket quantity updated" });
     } catch (error) {
@@ -291,10 +384,14 @@ async function run() {
     }
   });
 
-  app.get('/api/transactions/user/:email', async (req, res) => {
+  app.get('/api/transactions/user/:email', verifyToken, async (req, res) => {
     try {
       const email = req.params.email;
-      const result = await bookingCollection.find({ userEmail: email, status: "paid" }).sort({ paymentDate: -1 }).toArray();
+      const result = await bookingCollection.find(
+        { userEmail: email, status: "paid" }
+      ).sort(
+        { paymentDate: -1 }
+      ).toArray();
       res.send(result);
     } catch (error) {
       res.status(500).send({ message: "Failed to fetch transactions", error: error.message });
